@@ -39,8 +39,8 @@ tw <- readRDS("2018carpentrycon_tweets.rds")
 ## About this document
 
 This document was generated using RMarkdown, and the source is available on
-GitHub at:
-[https://github.com/fmichonneau/carpentrycon2018-tweets](https://github.com/fmichonneau/carpentrycon2018-tweets).
+Gitlab at:
+[https://gitlab.com/fmichonneau/carpentrycon2018-tweets](https://gitlab.com/fmichonneau/carpentrycon2018-tweets).
 
 Pull requests to add other figures or fix bugs are welcome.
 
@@ -447,12 +447,12 @@ ts_plot(tw, "2 hours") +
   <br />
   To the extent possible under law,
   <a rel="dct:publisher"
-     href="https://github.com/fmichonneau/evol2017-tweets">
+     href="https://gitlab.com/fmichonneau/2018-carpentrycon-tweets">
     <span property="dct:title">Francois Michonneau</span></a>
   has waived all copyright and related or neighboring rights to
   <span property="dct:title">Summary of tweets at the 2017 Evolution conference</span>.
 This work is published from:
 <span property="vcard:Country" datatype="dct:ISO3166"
-      content="US" about="https://github.com/fmichonneau/evol2015-tweets">
+      content="US" about="https://gitlab.com/fmichonneau/2018-carpentrycon-tweets">
   United States</span>.
 </p>
