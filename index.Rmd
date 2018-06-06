@@ -187,13 +187,14 @@ ggplot(most_fav) +
     geom_bar(aes(x = screen_name, y = n_fav),
              stat = "identity", fill = wes_palette("Zissou1")[2]) +
     coord_flip() + xlab("User") + ylab("Total number of favorites") +
+    theme_minimal() + 
     theme(axis.text = element_text(size = 12),
           legend.text = element_text(size = 12))
 ```
 
 ### Number of retweets received by users
 
-```{r, fig.height=8, echo=FALSE}
+```{r, fig.height=6, fig.width=10, echo=FALSE}
 ## Most retweeted
 
 most_rt <- impact %>%
@@ -214,7 +215,7 @@ ggplot(most_rt) +
 
 ### Mean numbers of favorites received
 
-```{r, fig.height=8, echo=FALSE}
+```{r, fig.height=6, fig.width=10, echo=FALSE}
 
 ### Mean favorites
 
@@ -229,6 +230,7 @@ ggplot(hi_mean_fav) +
     geom_bar(aes(x = screen_name, y = mean_fav),
              stat = "identity", fill = wes_palette("Zissou1")[2]) +
     coord_flip() + xlab("User") + ylab("Number of favorites / tweets") +
+    theme_minimal() +
     theme(axis.text = element_text(size = 12),
           legend.text = element_text(size = 12))
 
