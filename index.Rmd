@@ -7,10 +7,15 @@ output:
 ---
 
 ```{r get-tweets, echo=FALSE}
+knitr::opts_chunk$set(message = FALSE,
+                      fig.path = "images/blog/2018/06/2018-06-11-carpentrycon-tweets-",
+                      #fig.process = function(x) gsub("images", "{{ site.urlimg }}", x),
+                      fig.retina=2)
 library(rtweet)
 ### Query used:
-## search_tweets(q = "#carpentrycon2018 OR @carpentrycon", include_rts = FALSE, n = 10000) %>%
-##    saveRDS(file = "2018carpentrycon_tweets_no_rts.rds")
+## search_tweets(q = "#carpentrycon2018 OR @carpentrycon", include_rts = TRUE,
+##               n = 10000) %>%
+##    saveRDS(file = "2018carpentrycon_tweets.rds")
 ```
 
 
@@ -36,25 +41,31 @@ library(widyr)
 tw <- readRDS("2018carpentrycon_tweets.rds")
 ```
 
-## About this document
+To complete the [CarpentryCon report](https://carpentries.org/blog/2018/06/carpentry-con-report/), I analyzed the tweets with the "#CarpentryCon2018" hashtag or that mentioned "@CarpentryCon" using the [rtweet R package](http://rtweet.info/) by Michael W. Kearney. The source code used is available from [GitHub](https://github.com/fmichoonneau/2018-carpentrycon-tweets) and is based on the analyses of tweets generated during the Evolution conference. This analysis would not also be possible without the [tidytext](https://github.com/juliasilge/tidytext) and the [tidyverse](http://tidyverse.org/) packages.
 
-This document was generated using RMarkdown, and the source is available on
-Gitlab at:
-[https://gitlab.com/fmichonneau/carpentrycon2018-tweets](https://gitlab.com/fmichonneau/carpentrycon2018-tweets).
+The figures seem to reflect the feeling participants expressed during the conference. The Carpentries is about the great people making up our community and this is reflected in the word cloud, and the most commonly associated words. The sentiment analysis shows very little use of words associated with negativity (and the ones used seem to be from people who could not attend the event), but instead highlight the positive experience of the participants.
 
-Pull requests to add other figures or fix bugs are welcome.
-
-This document (and associated code) is released under a CC0 licence.
-
-If you have questions or comments, I am on twitter at
-[fmic_](https://twitter.com/fmic_) or by email at [francois.michonneau@gmail.com](mailto:francois.michonneau@gmail.com)
-
+If you have other ideas to analyze the tweets, leave them in the comments!
 
 ## Basic summary
 
 * Total number of tweets with the #CarpentryCon2018 hashtag between `r range(tw$created_at)[1]`, and `r range(tw$created_at)[2]`: `r nrow(tw)`
 * Total of original tweets (no retweets): `r sum(!tw$is_retweet)`.
 * Number of users who tweeted: `r length(unique(tw$screen_name))`.
+
+## Tweets timeline
+
+```{r timeline, echo=FALSE, fig.width=10}
+ts_plot(tw, "2 hours") +
+    ggplot2::theme_minimal() +
+    ggplot2::theme(plot.title = ggplot2::element_text(face = "bold")) +
+    ggplot2::labs(
+                 x = NULL, y = NULL,
+                 title = "Frequency of CarpentryCon tweets",
+                 subtitle = "Twitter status (tweet) counts aggregated using two-hour intervals",
+                 caption = "\nSource: Data collected from Twitter's REST API via rtweet"
+             )
+```
 
 
 ## The 5 most favorited tweets
@@ -87,8 +98,6 @@ render_tweet <- function(dt, row) {
 for (i in seq_len(nrow(top_fav))) {
     render_tweet(top_fav, i)
 }
-
-
 ```
 
 
@@ -103,10 +112,9 @@ top_rt <- tw %>%
 for (i in seq_len(nrow(top_fav))) {
     render_tweet(top_rt, i)
 }
-
 ```
 
-## Top tweeters
+## Top users
 
 All generated tweets (including retweets)
 
@@ -194,7 +202,7 @@ ggplot(most_fav) +
 
 ### Number of retweets received by users
 
-```{r, fig.height=6, fig.width=10, echo=FALSE}
+```{r most-rt-received, fig.height=6, fig.width=10, echo=FALSE}
 ## Most retweeted
 
 most_rt <- impact %>%
@@ -215,7 +223,7 @@ ggplot(most_rt) +
 
 ### Mean numbers of favorites received
 
-```{r, fig.height=6, fig.width=10, echo=FALSE}
+```{r mean-fav-received, fig.height=6, fig.width=10, echo=FALSE}
 
 ### Mean favorites
 
@@ -238,7 +246,7 @@ ggplot(hi_mean_fav) +
 
 ### Mean numbers of retweets received
 
-```{r, fig.height=6, fig.width=10, echo=FALSE}
+```{r mean-rt-received, fig.height=6, fig.width=10, echo=FALSE}
 
 ### Mean retweets
 
@@ -349,9 +357,9 @@ render_plot <- function(bars, path) {
 emojis %>%
     dplyr::select(emoji_png, freq) %>%
     purrr::pmap(render_row_emoji) %>%
-    render_plot
+    render_plot()
 
- ```
+ ```	
 
 
 ## Most commonly associated words
@@ -371,8 +379,8 @@ tw_word <- tw %>%
     anti_join(evo_stop_words, by = "word") %>%
     filter(!grepl("^[0-9]+$", word))
 
-#tw_word %>%
-#    count(word, sort = TRUE)
+                                        #tw_word %>%
+                                        #    count(word, sort = TRUE)
 
 tw_word_pairs <- tw_word %>%
     pairwise_count(word, status_id, sort = TRUE, upper = FALSE)
@@ -415,31 +423,42 @@ tw_words_all  <- tw %>%
 tw_words <- tw_words_all %>%
     unnest_tokens(word, text) %>%
     inner_join(get_sentiments("bing"), by="word") %>%
-    count(day, index = minutes %/% 360, sentiment) %>%
-    spread(sentiment, n, fill = 0) %>%
-    mutate(sentiment = positive - negative)
+    count(word, sentiment, sort = TRUE) %>%
+    ungroup()
 
 tw_words %>%
-    mutate(time=minutes(index)*360 + min(tw_words_all$created_at)) %>%
-    ggplot(aes(time, sentiment, fill = as.factor(day))) +
-    geom_col() +
+    group_by(sentiment) %>%
+    top_n(10) %>%
+    ungroup() %>%
+    mutate(word = reorder(word, n)) %>%
+    ggplot(aes(word, n, fill = sentiment)) +
+    geom_col(show.legend = FALSE) +
+    facet_wrap(~sentiment, scales = "free_y") +
+    labs(y = "Contribution to sentiment",
+         x = NULL) +
+    coord_flip() +
+    scale_fill_manual(values = wes_palette("Zissou1")[c(1, 4)]) +
     theme_minimal() +
-    theme(legend.position = "none")
+    theme(axis.text = element_text(size = 12),
+          legend.text = element_text(size = 12))
 
 
-        ```			
 
-```{r timeline, echo=FALSE, fig.width=10}
-ts_plot(tw, "2 hours") +
-    ggplot2::theme_minimal() +
-    ggplot2::theme(plot.title = ggplot2::element_text(face = "bold")) +
-    ggplot2::labs(
-                 x = NULL, y = NULL,
-                 title = "Frequency of CarpentryCon tweets",
-                 subtitle = "Twitter status (tweet) counts aggregated using two-hour intervals",
-                 caption = "\nSource: Data collected from Twitter's REST API via rtweet"
-             )
-```
+
+## count(day, index = minutes %/% 360, sentiment) %>%
+##     spread(sentiment, n, fill = 0) %>%
+##     mutate(sentiment = positive - negative)
+
+## tw_words %>%
+##     mutate(time=minutes(index)*360 + min(tw_words_all$created_at)) %>%
+##     ggplot(aes(time, sentiment, fill = as.factor(day))) +
+##     geom_col() +
+##     theme_minimal() +
+##     theme(legend.position = "none")
+
+
+```				
+
 
 -----
 <p xmlns:dct="http://purl.org/dc/terms/" xmlns:vcard="http://www.w3.org/2001/vcard-rdf/3.0#">
